@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Please Submit Your Name</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --space-cadet: #22223b;
+            --independence: #4a4e69;
+            --cool-gray: #9a8c98;
+            --pale-dogwood: #c9ada7;
+            --isabelline: #f2e9e4;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: var(--space-cadet);
+            color: var(--isabelline);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background-color: var(--independence);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+        }
+        h1 {
+            color: var(--isabelline);
+            text-align: center;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            font-size: 2.2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--cool-gray);
+            border-radius: 6px;
+            background-color: var(--isabelline);
+            color: var(--space-cadet);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--pale-dogwood);
+            box-shadow: 0 0 0 3px rgba(201, 173, 167, 0.3);
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        button {
+            background-color: var(--pale-dogwood);
+            color: var(--space-cadet);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:hover {
+            background-color: var(--cool-gray);
+            color: var(--isabelline);
+        }
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .download-btn {
+            background-color: var(--cool-gray);
+            color: var(--isabelline);
+        }
+        .message {
+            margin-top: 1rem;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .success {
+            background-color: rgba(154, 140, 152, 0.2);
+            color: var(--isabelline);
+        }
+        .error {
+            background-color: rgba(201, 173, 167, 0.2);
+            color: var(--pale-dogwood);
+        }
+        .recent-names {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--cool-gray);
+        }
+        .recent-names h2 {
+            font-size: 1rem;
+            color: var(--cool-gray);
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+        .names-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            color: var(--isabelline);
+        }
+        .names-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(154, 140, 152, 0.2);
+        }
+        .counter {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--cool-gray);
+            color: var(--isabelline);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        .spinner {
+            display: none;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="counter">Total Names: <span id="nameCount">0</span></div>
+        <h1>Please Submit Your Name</h1>
+        <form id="nameForm" onsubmit="submitName(event)">
+            <div class="form-group">
+                <label for="name">Enter your name:</label>
+                <input type="text" id="name" required minlength="2" pattern="[A-Za-z\s-']+" title="Please enter a valid name (letters, spaces, hyphens, and apostrophes only)">
+            </div>
+            <div class="button-group">
+                <button type="submit">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Submit</span>
+                    <i class="fas fa-spinner spinner" id="submitSpinner"></i>
+                </button>
+                <button type="button" class="download-btn" onclick="downloadCSV()">
+                    <i class="fas fa-download"></i>
+                    <span>Download CSV</span>
+                </button>
+            </div>
+        </form>
+        <div id="message" class="message" style="display: none;"></div>
+        <div class="recent-names">
+            <h2>Recently Added Names</h2>
+            <ul id="namesList" class="names-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let recentNames = [];
+        const maxRecentNames = 5;
+
+        async function updateNameCount() {
+            try {
+                const response = await fetch('http://localhost:3000/api/download');
+                const text = await response.text();
+                const count = text.split('\n').length - 2; // Subtract header and empty last line
+                document.getElementById('nameCount').textContent = count;
+            } catch (error) {
+                console.error('Error updating name count:', error);
+            }
+        }
+
+        function updateRecentNames(name) {
+            recentNames.unshift(name);
+            if (recentNames.length > maxRecentNames) {
+                recentNames.pop();
+            }
+            const namesList = document.getElementById('namesList');
+            namesList.innerHTML = recentNames.map(n => `<li>${n}</li>`).join('');
+        }
+
+        async function submitName(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('name');
+            const submitButton = event.submitter;
+            const spinner = document.getElementById('submitSpinner');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                showMessage('Please enter a name', 'error');
+                return;
+            }
+
+            try {
+                submitButton.disabled = true;
+                spinner.style.display = 'inline-block';
+
+                const response = await fetch('http://localhost:3000/api/names', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Name submitted successfully!', 'success');
+                    nameInput.value = '';
+                    updateRecentNames(name);
+                    await updateNameCount();
+                } else {
+                    showMessage('Error submitting name', 'error');
+                }
+            } catch (error) {
+                showMessage('Error connecting to server', 'error');
+            } finally {
+                submitButton.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        function downloadCSV() {
+            window.location.href = 'http://localhost:3000/api/download';
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize
+        updateNameCount();
+
+        // Add event listener for Enter key
+        document.getElementById('name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.querySelector('button[type="submit"]').click();
+            }
+        });
+    </script>
+</body>
+</html> 
