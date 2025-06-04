@@ -186,7 +186,7 @@
 
         async function updateNameCount() {
             try {
-                const response = await fetch('http://localhost:3000/api/download');
+                const response = await fetch('https://name-collector-46k4.onrender.com/api/download');
                 const text = await response.text();
                 const count = text.split('\n').length - 2; // Subtract header and empty last line
                 document.getElementById('nameCount').textContent = count;
@@ -220,7 +220,7 @@
                 submitButton.disabled = true;
                 spinner.style.display = 'inline-block';
 
-                const response = await fetch('http://localhost:3000/api/names', {
+                const response = await fetch('https://name-collector-46k4.onrender.com/api/names', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -246,7 +246,7 @@
         }
 
         function downloadCSV() {
-            window.location.href = 'http://localhost:3000/api/download';
+            window.location.href = 'https://name-collector-46k4.onrender.com/api/download';
         }
 
         function showMessage(text, type) {

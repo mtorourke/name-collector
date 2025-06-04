@@ -7,11 +7,9 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// CORS configuration for production
+// CORS configuration
 const corsOptions = {
-    origin: process.env.NODE_ENV === 'production' 
-        ? process.env.ALLOWED_ORIGIN 
-        : 'http://localhost:3000',
+    origin: ['https://name-collector-46k4.onrender.com', 'http://localhost:3000'],
     optionsSuccessStatus: 200
 };
 
@@ -50,5 +48,5 @@ app.get('/api/download', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server running on port ${port}`);
 }); 
